@@ -1,0 +1,4 @@
+Bus ID,Real Power Output,React Power Output,Max React Power Output,Min React Power Output,Volt Magnitude,mBase,status,Max Real Power Output,Min Real Power Output,Pc1,Pc2,Qc1min,Qc1max,Qc2min,Qc2max,Ramp Rate,10 min Ramp Rate,30 min Ramp Rate,React Power Ramp Rate,APF
+1.0,232.4,-16.9,10.0,0.0,1.06,100.0,1.0,332.4,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+2.0,40.0,42.4,50.0,-40.0,1.045,100.0,1.0,140.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+3.0,0.0,23.4,40.0,0.0,1.01,100.0,1.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
