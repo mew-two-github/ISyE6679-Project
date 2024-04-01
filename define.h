@@ -29,36 +29,81 @@ double f(vector<double> X, vector<double> a, vector<double> b, vector<double> c)
 	}
 
 
-vector<double> G(vector<double> X, vector<double> vector<double> G, vector<double> B) {
-		// Variable Definitions
+void G(vector<double> X, vector<double> BusID_Gen, vector<double> BusID_REG, vector<double> FromBus, vector<double> ToBus,
+				 double* PowerReg, vector<double> RealPowerDemand, vector<double> ReactPowerDemand, vector<double> G, vector<double> B,
+				 vector<double> Real_P_G, vector<double> React_P_G, vector<double> Real_P_REG, vector<double> React_P_REG, double* y) 
+{
 		vector<double> result;
-		map<int,int> m;
+		vector<vector<double> > G_map, B_map, theta_map;
+		int Nb = RealPowerMax.size();
 
-		// Real Power Balances
-		for(int i = 0; i < RealPowerMax.size(); i++ )
+		// Fill theta, G and B values
+		for( int i = 0; i < Nb; i++ )
 		{
-			temp 
-			if (m.find("f") == m.end()) {
-			// not found
-			} 
-			else {
-			// found
+			vector<double> v(Nb, 0.0);
+			G_map.push_back(v);
+			B_map.push_back(v);
+			theta_map.push_back(v);
+		}
+		int Nbranches = FromBus.size();
+		for (int i=0; i < Nbranches; i++) 
+		{
+			theta[i][j] = X[3*Nb+FromBus[i]-1] - X[3*Nb+ToBus[i]-1]
+			G[FromBus[i]-1][ToBus[i]-1] = G[i];
+			B[FromBus[i]-1][ToBus[i]-1] = B[i];
+		}
+
+		// Fill Power terms
+		vector<double> P_G(Nb, 0.0), P_R(Nb, 0.0), Q_G(Nb, 0.0), Q_R(Nb, 0.0);
+		int NG = BusID_Gen.size(), NR = BusID_REG.size();
+		for( int i = 0; i < Nb; i++ )
+		{
+			for( int j = 0; j < NG; j++ )
+			{
+				if( i + 1 == BusID_Gen[j] )
+				{	
+					P_G[i] = X[j];
+					Q_G[i] = X[j + NG];
+					continue;
+				}
 			}
+			for( int j = 0; j < NR; j++ )
+			{
+				if( i + 1 == BusID_REG[j] )
+				{	
+					P_R[i] = Real_P_REG[j];
+					Q_R[i] = React_P_REG[j];
+					continue;
+				}
+			}
+		}
+
+		double temp = 0, temp2 = 0;
+		// Real Power Balances
+		for(int i = 0; i < Nb; i++ )
+		{
+			temp = P_G[i] + P_R[i] - RealPowerDemand[i];
+			
+			temp2 = 0;
+			for(int j = 0; j< Nb; j++)
+			{
+				temp2 += X[2*NG + j]*( G[i][j]*cos(theta[i][j]) + B[i][j]*sin(theta[i][j]) );
+			}
+			y[i] = temp - temp2*X[2*NG + i];
 		}
 		
 		// Reactive Power Balances
-		for(int i = 0; i < RealPowerMax.size(); i++ )
+		for(int i = 0; i < Nb; i++ )
 		{
-			temp 
-			if (m.find("f") == m.end()) {
-			// not found
-			} 
-			else {
-			// found
+			temp = Q_G[N_G + i] + Q_R[N_G + i] - ReactPowerDemand[N_G + i];
+			
+			temp2 = 0;
+			for(int j = 0; j< Nb; j++)
+			{
+				temp2 += X[2*NG + j]*( G[i][j]*sin(theta[i][j]) - B[i][j]*cos(theta[i][j]) );
 			}
+			y[i] = temp - temp2*X[2*NG + i];
 		}
-
-		return result;
 }
 
 
