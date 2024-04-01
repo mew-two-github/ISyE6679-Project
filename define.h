@@ -29,13 +29,13 @@ double f(vector<double> X, vector<double> a, vector<double> b, vector<double> c)
 	}
 
 
-void G(vector<double> X, vector<double> BusID_Gen, vector<double> BusID_REG, vector<double> FromBus, vector<double> ToBus,
+void G(vector<double> X, vector<double> BusID_Gen, vector<double> BusID_REG, vector<int> FromBus, vector<int> ToBus,
 				 double* PowerReg, vector<double> RealPowerDemand, vector<double> ReactPowerDemand, vector<double> G, vector<double> B,
 				 vector<double> Real_P_G, vector<double> React_P_G, vector<double> Real_P_REG, vector<double> React_P_REG, double* y) 
 {
 		vector<double> result;
-		vector<vector<double> > G_map, B_map, theta_map;
-		int Nb = RealPowerMax.size();
+		vector<vector<double> > G_map, B_map, theta;
+		int Nb = RealPowerDemand.size();
 
 		// Fill theta, G and B values
 		for( int i = 0; i < Nb; i++ )
@@ -43,14 +43,14 @@ void G(vector<double> X, vector<double> BusID_Gen, vector<double> BusID_REG, vec
 			vector<double> v(Nb, 0.0);
 			G_map.push_back(v);
 			B_map.push_back(v);
-			theta_map.push_back(v);
+			theta.push_back(v);
 		}
 		int Nbranches = FromBus.size();
 		for (int i=0; i < Nbranches; i++) 
 		{
-			theta[i][j] = X[3*Nb+FromBus[i]-1] - X[3*Nb+ToBus[i]-1]
-			G[FromBus[i]-1][ToBus[i]-1] = G[i];
-			B[FromBus[i]-1][ToBus[i]-1] = B[i];
+			theta[FromBus[i]-1][ToBus[i]-1] = X[3*Nb+FromBus[i]-1] - X[3*Nb+ToBus[i]-1];
+			G_map[FromBus[i]-1][ToBus[i]-1] = G[i];
+			B_map[FromBus[i]-1][ToBus[i]-1] = B[i];
 		}
 
 		// Fill Power terms
@@ -87,7 +87,7 @@ void G(vector<double> X, vector<double> BusID_Gen, vector<double> BusID_REG, vec
 			temp2 = 0;
 			for(int j = 0; j< Nb; j++)
 			{
-				temp2 += X[2*NG + j]*( G[i][j]*cos(theta[i][j]) + B[i][j]*sin(theta[i][j]) );
+				temp2 += X[2*NG + j]*( G_map[i][j]*cos(theta[i][j]) + B_map[i][j]*sin(theta[i][j]) );
 			}
 			y[i] = temp - temp2*X[2*NG + i];
 		}
@@ -95,12 +95,12 @@ void G(vector<double> X, vector<double> BusID_Gen, vector<double> BusID_REG, vec
 		// Reactive Power Balances
 		for(int i = 0; i < Nb; i++ )
 		{
-			temp = Q_G[N_G + i] + Q_R[N_G + i] - ReactPowerDemand[N_G + i];
+			temp = Q_G[NG + i] + Q_R[NG + i] - ReactPowerDemand[NG + i];
 			
 			temp2 = 0;
 			for(int j = 0; j< Nb; j++)
 			{
-				temp2 += X[2*NG + j]*( G[i][j]*sin(theta[i][j]) - B[i][j]*cos(theta[i][j]) );
+				temp2 += X[2*NG + j]*( G_map[i][j]*sin(theta[i][j]) - B_map[i][j]*cos(theta[i][j]) );
 			}
 			y[i] = temp - temp2*X[2*NG + i];
 		}
@@ -148,8 +148,9 @@ vector<double> H(vector<double> X, vector<double> RealPowerMax, vector<double> R
 			Xplace++;
 		}
 		// Formula 9
+		double theta_ij;
 		for (int i=0; i < FromBus.size(); i++) {
-			theta_ij = X[Xplace+FromBus[i]-1] - X[Xplace+ToBus[i]-1]
+			theta_ij = X[Xplace+FromBus[i]-1] - X[Xplace+ToBus[i]-1];
 			//Max
 			temp =  theta_ij - VoltAngMax[i];
 			result.push_back(temp);
@@ -164,4 +165,4 @@ vector<double> H(vector<double> X, vector<double> RealPowerMax, vector<double> R
 		return result;
 	}
 
-
+#endif
