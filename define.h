@@ -4,9 +4,13 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include<map>
+
+using namespace std;
+
 //function declarations
 
-double f(std::vector<double> X, std::vector<double> a, std::vector<double> b, std::vector<double> c) {
+double f(vector<double> X, vector<double> a, vector<double> b, vector<double> c) {
 		// Variable Definitions
 		double result = 0;
 		//double temp = 0;
@@ -16,7 +20,7 @@ double f(std::vector<double> X, std::vector<double> a, std::vector<double> b, st
 		for (int i=0; i < a.size(); i++) {
 			//temp += a[i]*pow(X[i], 2) + b[i]*X[i] + c[i];
 			//printf("a[%d]*X[%d]**2 + b[%d]*X[%d] + c[%d] = %f\n", i, i, i, i, i, temp);
-			//result.insert(result.end(), temp);
+			//result.push_back(temp);
 			result += a[i]*pow(X[i], 2) + b[i]*X[i] + c[i];
 		}
 		
@@ -24,22 +28,46 @@ double f(std::vector<double> X, std::vector<double> a, std::vector<double> b, st
 		return result;
 	}
 
-/*
-std::vector<double> G(std::vector<double> X) {
-		// Variable Definitions
-		std::vector<double> result;
-		
-		// Function Operations
-		
-		
-		// Return
-		return result;
-	}
-*/
 
-std::vector<double> H(std::vector<double> X, std::vector<double> RealPowerMax, std::vector<double> RealPowerMin, std::vector<double> ReactPowerMax, std::vector<double> ReactPowerMin, std::vector<double> VoltMax, std::vector<double> VoltMin, std::vector<double> FromBus, std::vector<double> ToBus, std::vector<double> VoltAngMax, std::vector<double> VoltAngMin) {
+vector<double> G(vector<double> X, vector<double> vector<double> G, vector<double> B) {
 		// Variable Definitions
-		std::vector<double> result;
+		vector<double> result;
+		map<int,int> m;
+
+		// Real Power Balances
+		for(int i = 0; i < RealPowerMax.size(); i++ )
+		{
+			temp 
+			if (m.find("f") == m.end()) {
+			// not found
+			} 
+			else {
+			// found
+			}
+		}
+		
+		// Reactive Power Balances
+		for(int i = 0; i < RealPowerMax.size(); i++ )
+		{
+			temp 
+			if (m.find("f") == m.end()) {
+			// not found
+			} 
+			else {
+			// found
+			}
+		}
+
+		return result;
+}
+
+
+vector<double> H(vector<double> X, vector<double> RealPowerMax, vector<double> RealPowerMin, 
+				 vector<double> ReactPowerMax, vector<double> ReactPowerMin, vector<double> VoltMax, 
+				 vector<double> VoltMin, vector<double> FromBus, vector<double> ToBus, vector<double> VoltAngMax, vector<double> VoltAngMin) 
+{
+		// Variable Definitions
+		vector<double> result;
 		double temp = 0;
 		int Xplace = 0;
 		
@@ -48,47 +76,47 @@ std::vector<double> H(std::vector<double> X, std::vector<double> RealPowerMax, s
 		for (int i=0; i < RealPowerMax.size(); i++) {
 			//Max
 			temp = X[Xplace] - RealPowerMax[i];
-			result.insert(result.end(), temp);
+			result.push_back(temp);
 			//Min
 			temp = -1*X[Xplace] + RealPowerMin[i];
-			result.insert(result.end(), temp);
+			result.push_back(temp);
 			Xplace++;
 		}
 		// Formula 5
 		for (int i=0; i < ReactPowerMax.size(); i++) {
 			//Max
 			temp = X[Xplace] - ReactPowerMax[i];
-			result.insert(result.end(), temp);
+			result.push_back(temp);
 			//Min
 			temp = -1*X[Xplace] + ReactPowerMin[i];
-			result.insert(result.end(), temp);
+			result.push_back(temp);
 			Xplace++;
 		}
 		// Formula 7
 		for (int i=0; i < VoltMax.size(); i++) {
 			//Max
 			temp = X[Xplace] - VoltMax[i];
-			result.insert(result.end(), temp);
+			result.push_back(temp);
 			//Min
 			temp = -1*X[Xplace] + VoltMin[i];
-			result.insert(result.end(), temp);
+			result.push_back(temp);
 			Xplace++;
 		}
 		// Formula 9
-		/*
 		for (int i=0; i < FromBus.size(); i++) {
+			theta_ij = X[Xplace+FromBus[i]-1] - X[Xplace+ToBus[i]-1]
 			//Max
-			temp = X[Xplace] - VoltAngMax[i];
-			result.insert(result.end(), temp);
+			temp =  theta_ij - VoltAngMax[i];
+			result.push_back(temp);
 			//Min
-			temp = -1*X[Xplace] + VoltAngMin[i];
-			result.insert(result.end(), temp);
-			Xplace++;
+			temp = -1*theta_ij + VoltAngMin[i];
+			result.push_back(temp);
+
 		}
-		*/
+
 		
 		// Return
 		return result;
 	}
 
-#endif
+
