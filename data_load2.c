@@ -25,10 +25,10 @@ void readBranch(char filename[]){
 }
 
 int main(){
-	char filename1[] = "Case 14 Bus.csv";
-	char filename2[] = "Case 14 Generator.csv";
-	char filename3[] = "Case 14 Generator Cost.csv";
-	char filename4[] = "Case 14 Branch.csv";
+	char filename1[] = "./data/Case 14 Bus.csv";
+	char filename2[] = "./data/Case 14 Generator.csv";
+	char filename3[] = "./data/Case 14 Generator Cost.csv";
+	char filename4[] = "./data/Case 14 Branch.csv";
 	//char filename5[] = "Case 14 REG.csv";
   
 	// declare temp vectors for Bus Data
@@ -141,17 +141,16 @@ int main(){
 	//std::vector<double> HX;
 	//std::vector<double> Z;
 	
-	Real fX[1];
-	//printf("%ld, %ld, %ld, %ld, %d\n", RealPower.size(), ReactPower.size(), Volt.size(), VoltAng.size(), sizeX);
+	Real Cost[1];
+	printf("RealPower.Size() = %ld, Volt() = %ld, sizeX = %d\n", RealPower.size(), Volt.size(), sizeX);
 	int sizeY = 2*RealPowerMax.size() + 2*ReactPowerMax.size() + 2*VoltMax.size() + 2*FromBus.size();
-	Real HX[sizeY];
-	Real Z[sizeY];
+	Real HX[sizeY], Z[sizeY];
 	vector<vector<Real>> dHXdX(sizeY, vector<Real>(sizeX));
 	
 	printf("Number of Equations: %d, Number of Variables: %d\n", sizeY, sizeX);
 	
 	// Construct Problem
-	f(X, a, b, c, fX);
+	f(X, a, b, c, Cost);
 //	for (Real i: fX)
 //		std::cout << i << ' ';
 //	printf("\n");
@@ -169,16 +168,28 @@ int main(){
 //	printf("\n");
 
 	// Calculate Derivatives
-	dHXdX = forwardModeFirstDerivativeH(X, sizeX, HX, sizeY, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, 
+	/*dHXdX = forwardModeFirstDerivativeH(X, sizeX, HX, sizeY, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, 
 								VoltAngMax, VoltAngMin, dHXdX);
-//	for (vector<Real> i: dHXdX) {
-//		for (Real j: i) {
-//			std::cout << j << ' ';
-//		}
-//		std::cout << std::endl;
-//	}
-
-
+	for (vector<Real> i: dHXdX) {
+		for (Real j: i) {
+			std::cout << j << ' ';
+		}
+		std::cout << std::endl;
+	}*/
+	
+	/************************************
+	 Testing for f_X
+	*************************************/
+	// vector<vector<Real>> f_X(1, vector<Real>(sizeX));
+	// cout<<"Cost ="<<Cost[0]<<"\n"<<"a.size()"<<a.size()<<"\n";
+	// Real f_val[1];
+	// f_X  = fX(X, sizeX, f_val, 1, a, b, c, f_X);
+	// for (vector<Real> i: f_X)
+	// {
+	// 	for (Real j: i)
+	// 		cout<<j << ' ';
+	// 	cout<<"\n";
+	// }
 }
 
 
