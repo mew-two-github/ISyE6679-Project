@@ -3,8 +3,10 @@
 #include <iostream> 
 #include <vector>
 #include <codi.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
 
 using Real = codi::RealForward;
+namespace ublas = boost::numeric::ublas;
 
 void readREG(char filename[]){
   io::CSVReader<7> in(filename);
@@ -25,12 +27,16 @@ void readBranch(char filename[]){
 }
 
 int main(){
+
+	/*********************************************** Declare Filenames ***********************************************/
 	char filename1[] = "./data/Case 14 Bus.csv";
 	char filename2[] = "./data/Case 14 Generator.csv";
 	char filename3[] = "./data/Case 14 Generator Cost.csv";
 	char filename4[] = "./data/Case 14 Branch.csv";
-	char filename5[] = "./data/Case 14 REG one scen.csv";
+	char filename5[] = "./data/Case 14 REG.csv";
   
+  
+  	/*********************************************** Read Bus Data ***********************************************/
 	// declare temp vectors for Bus Data
 	std::vector<double> VoltAng;
 	std::vector<double> Volt;
@@ -53,7 +59,9 @@ int main(){
 			ReactPowerDemand.push_back(Qd);
 		}
 	}
+	
   
+  	/*********************************************** Read Generator Data ***********************************************/
 	// declare temp vectors for Generator Data
 	std::vector<double> RealPower;
 	std::vector<double> ReactPower;
@@ -79,6 +87,8 @@ int main(){
 		}
 	}
 	
+	
+	/*********************************************** Read Generator Cost Data ***********************************************/
 	// declare temp vectors for Generator Cost Data
 	std::vector<double> a;
 	std::vector<double> b;
@@ -96,6 +106,8 @@ int main(){
 		}
 	}
 	
+	
+	/*********************************************** Read Branch Data ***********************************************/
 	// declare temp vectors for Branch Data
 	vector<double> VoltAngMax, VoltAngMin, Gvec, Bvec;
 	vector<double> FromBus, ToBus;
@@ -115,32 +127,29 @@ int main(){
 			Bvec.push_back(Bij);
 		}
 	}
-
+	
+	
+	/*********************************************** Read REG Data ***********************************************/
+	// declare temp vectors for REG Data
 	vector<double> Real_P_REG, React_P_REG;
 	vector<double> BusID_REG;
+	// following code is to read REG Data
 	{
 		io::CSVReader<7> in(filename5);
 		in.read_header(io::ignore_extra_column, "Bus ID", "Real Power Output", "React Power Output", "Max Real Power Output", "Min Real Power Output", "Max React Power Output", "Min React Power Output");
 		
 		double REG_ID, n,o,m,l,	P, Q; 
 		while(in.read_row(REG_ID, n,o,m,l,	P, Q)){
+			// get Bus ID, Real Power, and React Power values
 			BusID_REG.push_back(REG_ID); 
 			Real_P_REG.push_back(P); 
-			React_P_REG.push_back(Q); 
-
+			React_P_REG.push_back(Q);
 		}	
 	}
     
-    /*
-	// declare X vector with contents {Real Power of Gen n, React Power of Gen n, Volt of Bus m, Volt Angle of Bus m}
-	std::vector<double> X;
-	X.insert( X.end(), RealPower.begin(), RealPower.end() );
-	X.insert( X.end(), ReactPower.begin(), ReactPower.end() );
-	X.insert( X.end(), Volt.begin(), Volt.end() );
-	X.insert( X.end(), VoltAng.begin(), VoltAng.end() );
-	*/
 	
-	// declare X vector with contents {Real Power of Gen n, React Power of Gen n, Volt of Bus m, Volt Angle of Bus m}
+	/*********************************************** Declare X Vector ***********************************************/
+	//contents {Real Power of Gen n, React Power of Gen n, Volt of Bus m, Volt Angle of Bus m}
 	int sizeX = RealPower.size() + ReactPower.size() + Volt.size() + VoltAng.size();
 	Real X[sizeX];
 	int counter = 0;
@@ -152,52 +161,77 @@ int main(){
 		X[counter++] = i;
 	for (double i: VoltAng)
 		X[counter++] = i;
-
-//	for (Real i: X)
-//		std::cout << i << ' ';
-//	printf("\n");
+		
 	
-	// Declare Problem
-	//double fX;
-	std::vector<double> GX;
-	//std::vector<double> HX;
-	//std::vector<double> Z;
-	
-	Real Cost[1];
-	printf("RealPower.Size() = %ld, Volt() = %ld, sizeX = %d\n", RealPower.size(), Volt.size(), sizeX);
+	/*********************************************** Declare/Construct Problem Variables ***********************************************/
+	int Nb = FromBus.size();
 	int sizeY = 2*RealPowerMax.size() + 2*ReactPowerMax.size() + 2*VoltMax.size() + 2*FromBus.size();
-	Real HX[sizeY], Z[sizeY];
-	vector<vector<Real>> dHXdX(sizeY, vector<Real>(sizeX));
+	Real Cost[1], GX[2*Nb], HX[sizeY];
+	ublas::compressed_matrix<double> Z(sizeY, 1);
+	ublas::compressed_matrix<double> L(1, 1);
+	//double L;
+	
+	ublas::compressed_matrix<double> lambda(2*Nb, 1), mu(sizeY, 1), gamma(sizeY, 1);
+	
+	for(size_t i = 0; i < lambda.size1(); ++i) {
+        for(size_t j = 0; j < lambda.size2(); ++j) {
+             lambda(i,j) = 1;
+		}
+    }
 	
 	printf("Number of Equations: %d, Number of Variables: %d\n", sizeY, sizeX);
 	
-	// Construct Problem
-	// f(X, a, b, c, Cost);
-//	for (Real i: fX)
-//		std::cout << i << ' ';
-//	printf("\n");
+	
+	/************************************
+	 LOOP WILL GO BACK TO HERE
+	*************************************/
+	
+	
+	/*********************************************** Calculate Problem ***********************************************/
+	f(X, a, b, c, Cost);
+	ublas::compressed_matrix<double> CostuBLAS(1, 1);
+	CostuBLAS = RealPointerToDoubleUBlasVec(Cost, 1);
+	
+	G_func(X, BusID_Gen, BusID_REG, FromBus, ToBus, RealPowerDemand, ReactPowerDemand, Gvec, Bvec, Real_P_REG, React_P_REG, GX);
+	ublas::compressed_matrix<double> GXuBLAS(2*Nb, 1);
+	GXuBLAS = RealPointerToDoubleUBlasVec(GX, 2*Nb);
+	
+	H(X, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, VoltAngMax, VoltAngMin, HX);
+	ublas::compressed_matrix<double> HXuBLAS(sizeY, 1);
+	HXuBLAS = RealPointerToDoubleUBlasVec(HX, sizeY);
+	
+	
+	/*********************************************** Declare Derivatives ***********************************************/
+	vector<vector<Real>> dHXdX(sizeY, vector<Real>(sizeX));
 
-	// H(X, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, VoltAngMax, VoltAngMin, HX);
-//	for (Real i: HX)
-//		std::cout << i << std::endl;
-//	printf("\n");
 
-	// for (int i=0; i < sizeY; i++) {
-	// 	Z[i] = HX[i]*-1.0;
-	// }
-//	for (Real i: Z)
-//		std::cout << i << ' ';
-//	printf("\n");
-
-	// Calculate Derivatives
-	/*dHXdX = forwardModeFirstDerivativeH(X, sizeX, HX, sizeY, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, 
+	/*********************************************** Calculate Derivatives ***********************************************/
+	dHXdX = forwardModeFirstDerivativeH(X, sizeX, HX, sizeY, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, 
 								VoltAngMax, VoltAngMin, dHXdX);
-	for (vector<Real> i: dHXdX) {
-		for (Real j: i) {
-			std::cout << j << ' ';
+	ublas::compressed_matrix<double> dHdxMatrix(dHXdX.size(), dHXdX[0].size());
+	dHdxMatrix = RealVectorToDoubleUBlas(dHXdX, dHXdX.size(), dHXdX[0].size());
+	
+	
+	/*********************************************** Calculate Lagrangian Functions ***********************************************/
+	L = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z) - ublas::prod(trans(gamma), uBLASNaturalLog(Z));
+	
+	for(size_t i = 0; i < L.size1(); ++i) {
+        for(size_t j = 0; j < L.size2(); ++j) {
+             cout << L(i,j) << ' ';
 		}
-		std::cout << std::endl;
-	}*/
+		cout << '\n';
+    }
+	
+	
+	// Display Derivatives in uBLAS form
+    /*for(size_t i = 0; i < dHdxMatrix.size1(); ++i)
+    {
+        for(size_t j = 0; j < dHdxMatrix.size2(); ++j)
+             std::cout << dHdxMatrix(i,j) << ' ';
+        std::cout << '\n';
+    }*/
+    
+    
 
 	/************************************
 	 Testing for f_X
@@ -216,8 +250,7 @@ int main(){
 	/************************************
 	 Testing for G, G_X
 	*************************************/
-
-
+	/*
 	int Nb = FromBus.size();
 	Real G_val[2*Nb];
 	G_func( X, BusID_Gen, BusID_REG, FromBus, ToBus, RealPowerDemand, ReactPowerDemand, Gvec, Bvec, Real_P_REG, React_P_REG, G_val);
@@ -235,7 +268,8 @@ int main(){
 		for(Real val: v)
 			printf("%.1f ",val.value());
 		cout<<endl;
-	}
+	}*/
+	
 	
 	
 }

@@ -6,12 +6,13 @@
 #include <cmath>
 #include <map>
 #include <codi.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
 
 using Real = codi::RealForward;
-
 using namespace std;
+namespace ublas = boost::numeric::ublas;
 
-//function declarations
+/******************************************** Fuction Declarations ********************************************/
 
 void f(const Real* X, vector<double> a, vector<double> b, vector<double> c, Real* result) {
 
@@ -27,31 +28,11 @@ void f(const Real* X, vector<double> a, vector<double> b, vector<double> c, Real
 	}
 }
 
-vector<vector<Real>> fX(Real* X, int XSize, Real* Y, int YSize, vector<double> a, vector<double> b, vector<double> c, 
-						vector<vector<Real>> result)
-{
-	for(int i = 0; i < XSize; ++i) 
-	{
-		// Step 1: Set tangent seeding
-		X[i].gradient() = 1.0;
-		// Step 2: Evaluate function
-		f(X, a, b, c, Y);
-		for(int j = 0; j < YSize; ++j){
-
-			// Step 3: Access gradients
-			result[j][i] = Y[j].getGradient();
-
-		}
-		// Step 4: Reset tangent seeding
-		X[i].gradient() = 0.0;
-	}	
-	return(result);
-}
-
 
 void G_func(const Real* X, vector<double> BusID_Gen, vector<double> BusID_REG, vector<double> FromBus, vector<double> ToBus,
-			 vector<double> RealPowerDemand, vector<double> ReactPowerDemand, vector<double> G, vector<double> B, vector<double> Real_P_REG,
-				 vector<double> React_P_REG, Real* result) {
+	vector<double> RealPowerDemand, vector<double> ReactPowerDemand, vector<double> G, vector<double> B, vector<double> Real_P_REG,
+	vector<double> React_P_REG, Real* result) {
+	
 	// Variable Definitions
 	Real temp = 0;
 	int Xplace = 0;
@@ -130,36 +111,11 @@ void G_func(const Real* X, vector<double> BusID_Gen, vector<double> BusID_REG, v
 	}
 }
 
-vector<vector<Real>> GX_func(Real* X, int XSize, Real* Y, int YSize, vector<double> BusID_Gen, vector<double> BusID_REG, vector<double> FromBus, vector<double> ToBus,
-			 vector<double> RealPowerDemand, vector<double> ReactPowerDemand, vector<double> Gvec, vector<double> Bvec, vector<double> Real_P_REG,
-				 vector<double> React_P_REG, vector<vector<Real>> result)
-{
-	//printf("Number of Equations: %d, Number of Variables: %d\n", YSize, XSize);
-	for(int i = 0; i < XSize; ++i) {
-		// Step 1: Set tangent seeding
-		X[i].gradient() = 1.0;
-		// Step 2: Evaluate function
-		G_func(X, BusID_Gen, BusID_REG, FromBus, ToBus, RealPowerDemand, ReactPowerDemand, Gvec, Bvec, Real_P_REG, React_P_REG, Y);
-		for(int j = 0; j < YSize; ++j){
-
-			// Step 3: Access gradients
-			result[j][i] = Y[j].getGradient();
-
-		}
-		// Step 4: Reset tangent seeding
-		X[i].gradient() = 0.0;
-		//printf("%d ", j);
-	}
-	//fflush(stdout);
-	
-	return result;
-}
-
-
 
 void H(const Real* X, vector<double> RealPowerMax, vector<double> RealPowerMin, vector<double> ReactPowerMax, vector<double> ReactPowerMin, 
                         vector<double> VoltMax, vector<double> VoltMin, vector<double> FromBus, vector<double> ToBus,
                         vector<double> VoltAngMax, vector<double> VoltAngMin, Real* result) {
+                        
 	// Variable Definitions
 	Real temp = 0, theta_ij = 0;
 	int Xplace = 0, counter = 0;
@@ -217,12 +173,39 @@ void H(const Real* X, vector<double> RealPowerMax, vector<double> RealPowerMin, 
 
 }
 
-// Derivative Declarations
+//void L(const Real* fX, Real* GX, Real* HX, Real* Z, Real* Lambda, Real* Mu, double gamma) {
+//	asdf
+//}
+
+/******************************************** Derivative Declarations ********************************************/
+
+vector<vector<Real>> fX(Real* X, int XSize, Real* Y, int YSize, vector<double> a, vector<double> b, vector<double> c, 
+						vector<vector<Real>> result)
+{
+	for(int i = 0; i < XSize; ++i) 
+	{
+		// Step 1: Set tangent seeding
+		X[i].gradient() = 1.0;
+		// Step 2: Evaluate function
+		f(X, a, b, c, Y);
+		for(int j = 0; j < YSize; ++j){
+
+			// Step 3: Access gradients
+			result[j][i] = Y[j].getGradient();
+
+		}
+		// Step 4: Reset tangent seeding
+		X[i].gradient() = 0.0;
+	}	
+	return(result);
+}
+
 
 vector<vector<Real>> forwardModeFirstDerivativeH(Real* X, int XSize, Real* Y, int YSize, vector<double> RealPowerMax, vector<double> RealPowerMin, 
 								vector<double> ReactPowerMax, vector<double> ReactPowerMin, vector<double> VoltMax, 
 								vector<double> VoltMin, vector<double> FromBus, vector<double> ToBus, vector<double> VoltAngMax, 
 								vector<double> VoltAngMin, vector<vector<Real>> result) {
+								
 	//printf("Number of Equations: %d, Number of Variables: %d\n", YSize, XSize);
 	for(int i = 0; i < XSize; ++i) {
 		// Step 1: Set tangent seeding
@@ -243,6 +226,85 @@ vector<vector<Real>> forwardModeFirstDerivativeH(Real* X, int XSize, Real* Y, in
 	
 	return result;
 }
+
+
+vector<vector<Real>> GX_func(Real* X, int XSize, Real* Y, int YSize, vector<double> BusID_Gen, vector<double> BusID_REG, vector<double> FromBus, 
+			vector<double> ToBus, vector<double> RealPowerDemand, vector<double> ReactPowerDemand, vector<double> Gvec, vector<double> Bvec,
+			vector<double> Real_P_REG, vector<double> React_P_REG, vector<vector<Real>> result) {
+			
+	//printf("Number of Equations: %d, Number of Variables: %d\n", YSize, XSize);
+	for(int i = 0; i < XSize; ++i) {
+		// Step 1: Set tangent seeding
+		X[i].gradient() = 1.0;
+		// Step 2: Evaluate function
+		G_func(X, BusID_Gen, BusID_REG, FromBus, ToBus, RealPowerDemand, ReactPowerDemand, Gvec, Bvec, Real_P_REG, React_P_REG, Y);
+		for(int j = 0; j < YSize; ++j){
+
+			// Step 3: Access gradients
+			result[j][i] = Y[j].getGradient();
+
+		}
+		// Step 4: Reset tangent seeding
+		X[i].gradient() = 0.0;
+		//printf("%d ", j);
+	}
+	//fflush(stdout);
+	
+	return result;
+}
+
+/******************************************* Useful Funct Declarations *******************************************/
+
+ublas::compressed_matrix<double> RealVectorToDoubleUBlas(vector<vector<Real>> input, int rowSize, int colSize) {
+
+	ublas::compressed_matrix<double> output(rowSize, colSize);
+
+	for(int i = 0; i < rowSize; ++i) {
+		for(int j = 0; j < colSize; ++j) {
+			output(i,j) = input[i][j].value();
+			//std::cout << input[i][j].value() << ' ';
+		}
+		//std::cout << std::endl;
+	}
+	
+	return output;
+}
+
+ublas::compressed_matrix<double> RealPointerToDoubleUBlasVec(Real* input, int rowSize) {
+
+	ublas::compressed_matrix<double> output(rowSize, 1);
+
+	for(int i = 0; i < rowSize; ++i) {
+		for(int j = 0; j < 1; ++j) {
+			output(i,j) = input[i].value();
+			//std::cout << input[i][j].value() << ' ';
+		}
+		//std::cout << std::endl;
+	}
+	
+	return output;
+}
+
+ublas::compressed_matrix<double> uBLASNaturalLog(ublas::compressed_matrix<double> input) {
+
+	//ublas::compressed_matrix<double> output(rowSize, colSize);
+
+	for(int i = 0; i < input.size1(); ++i) {
+		for(int j = 0; j < input.size2(); ++j) {
+			input(i,j) = log(input(i,j));
+			//std::cout << input[i][j].value() << ' ';
+		}
+		//std::cout << std::endl;
+	}
+	
+	return input;
+}
+
+
+
+
+
+
 
 
 
