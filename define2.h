@@ -7,14 +7,33 @@
 #include <map>
 #include <codi.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
+#include<read_data.h>
 
 using Real = codi::RealForward;
 using namespace std;
 namespace ublas = boost::numeric::ublas;
 
+// Bus data
+vector<double> Volt, VoltMax, VoltMin, VoltAng, RealPowerDemand, ReactPowerDemand;
+// Generator Data
+vector<double> RealPower, ReactPower, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, BusID_Gen;
+// Generator Cost Data
+vector<double>  a, b, c;
+// Branch Data
+vector<double> VoltAngMax, VoltAngMin, Gvec, Bvec, FromBus, ToBus;
+// declare temp vectors for REG Data
+vector<double> Real_P_REG, React_P_REG,	BusID_REG;
+int Nb, sizeY;
+
+
+/*****Function headers*****/
+ublas::compressed_matrix<double> RealVectorToDoubleUBlas(vector<vector<Real>> input, int rowSize, int colSize);
+ublas::compressed_matrix<double> RealPointerToDoubleUBlasVec(Real* input, int rowSize);
+ublas::compressed_matrix<double> uBLASNaturalLog(ublas::compressed_matrix<double> input);
+
 /******************************************** Fuction Declarations ********************************************/
 
-void f(const Real* X, vector<double> a, vector<double> b, vector<double> c, Real* result) {
+void f(const Real* X, vector<double> a, vector<double> b, vector<double> c, Real* result ) {
 
 	// Function Operations (reminder that Real Power are the first values of the X vector)
 	result[0] = 0;
@@ -173,10 +192,28 @@ void H(const Real* X, vector<double> RealPowerMax, vector<double> RealPowerMin, 
 
 }
 
-//void L(const Real* fX, Real* GX, Real* HX, Real* Z, Real* Lambda, Real* Mu, double gamma) {
-//	asdf
-//}
 
+void Lag(const Real* X , ublas::compressed_matrix<double> lambda, ublas::compressed_matrix<double> mu, ublas::compressed_matrix<double> gamma,
+		  ublas::compressed_matrix<double> Z, ublas::compressed_matrix<double> &res)
+{
+	 Real Cost[1], GX[2*Nb], HX[sizeY];
+
+	 f(X, a, b, c, Cost);
+	 ublas::compressed_matrix<double> CostuBLAS(1, 1);
+	 CostuBLAS = RealPointerToDoubleUBlasVec(Cost, 1);
+	
+	 G_func(X, BusID_Gen, BusID_REG, FromBus, ToBus, RealPowerDemand, ReactPowerDemand, Gvec, Bvec, Real_P_REG, React_P_REG, GX);
+	 ublas::compressed_matrix<double> GXuBLAS(2*Nb, 1);
+	 GXuBLAS = RealPointerToDoubleUBlasVec(GX, 2*Nb);
+	
+	 H(X, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, VoltAngMax, VoltAngMin, HX);
+	 ublas::compressed_matrix<double> HXuBLAS(sizeY, 1);
+	 HXuBLAS = RealPointerToDoubleUBlasVec(HX, sizeY);
+	 
+	 res = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z)
+	       - ublas::prod(trans(gamma), uBLASNaturalLog(Z));	
+
+}
 /******************************************** Derivative Declarations ********************************************/
 
 vector<vector<Real>> fX(Real* X, int XSize, Real* Y, int YSize, vector<double> a, vector<double> b, vector<double> c, 
@@ -254,7 +291,6 @@ vector<vector<Real>> GX_func(Real* X, int XSize, Real* Y, int YSize, vector<doub
 }
 
 /******************************************* Useful Funct Declarations *******************************************/
-
 ublas::compressed_matrix<double> RealVectorToDoubleUBlas(vector<vector<Real>> input, int rowSize, int colSize) {
 
 	ublas::compressed_matrix<double> output(rowSize, colSize);

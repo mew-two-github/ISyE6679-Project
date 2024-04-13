@@ -2,6 +2,7 @@
 #include "define2.h"
 #include <iostream> 
 #include <vector>
+#include<read_data.h>
 #include <codi.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 
@@ -26,127 +27,11 @@ void readBranch(char filename[]){
   }
 }
 
+
+
 int main(){
 
-	/*********************************************** Declare Filenames ***********************************************/
-	char filename1[] = "./data/Case 14 Bus.csv";
-	char filename2[] = "./data/Case 14 Generator.csv";
-	char filename3[] = "./data/Case 14 Generator Cost.csv";
-	char filename4[] = "./data/Case 14 Branch.csv";
-	char filename5[] = "./data/Case 14 REG.csv";
-  
-  
-  	/*********************************************** Read Bus Data ***********************************************/
-	// declare temp vectors for Bus Data
-	std::vector<double> VoltAng;
-	std::vector<double> Volt;
-	std::vector<double> VoltMax;
-	std::vector<double> VoltMin;
-	vector<double> RealPowerDemand, ReactPowerDemand;
-	// following code is to read Bus data
-	{
-		io::CSVReader<7> in(filename1);
-		in.read_header(io::ignore_extra_column, "Bus ID", "Real Power Demand", "React Power Demand", "Volt Magnitude", "Max Volt Magnitude", "Min Volt Magnitude", "Volt Angle");
-		double Bus; double Pd; double Qd; double V; double Vmax; double Vmin; double Vang;
-		
-		while(in.read_row(Bus, Pd, Qd, V, Vmax, Vmin, Vang)){
-			// get Voltages and Voltage Angles
-			VoltAng.insert(VoltAng.end(), Vang);
-			Volt.insert(Volt.end(), V);
-			VoltMax.insert(VoltMax.end(), Vmax);
-			VoltMin.insert(VoltMin.end(), Vmin);
-			RealPowerDemand.push_back(Pd);
-			ReactPowerDemand.push_back(Qd);
-		}
-	}
-	
-  
-  	/*********************************************** Read Generator Data ***********************************************/
-	// declare temp vectors for Generator Data
-	std::vector<double> RealPower;
-	std::vector<double> ReactPower;
-	std::vector<double> RealPowerMax;
-	std::vector<double> RealPowerMin;
-	std::vector<double> ReactPowerMax;
-	std::vector<double> ReactPowerMin;
-	vector<double> BusID_Gen;
-  	// following code is to read Generator data
-	{
-		io::CSVReader<7> in(filename2);
-		in.read_header(io::ignore_extra_column, "Bus ID", "Real Power Output", "React Power Output", "Max Real Power Output", "Min Real Power Output", "Max React Power Output", "Min React Power Output");
-		double Bus; double Po; double Qo; double Pmax; double Pmin; double Qmax; double Qmin;
-		while(in.read_row(Bus, Po, Qo, Pmax, Pmin, Qmax, Qmin)){
-			// get Real and React power output
-			RealPower.insert(RealPower.end(), Po);
-			ReactPower.insert(ReactPower.end(), Qo);
-			RealPowerMax.insert(RealPowerMax.end(), Pmax);
-			RealPowerMin.insert(RealPowerMin.end(), Pmin);
-			ReactPowerMax.insert(ReactPowerMax.end(), Qmax);
-			ReactPowerMin.insert(ReactPowerMin.end(), Qmin);
-			BusID_Gen.push_back(Bus);
-		}
-	}
-	
-	
-	/*********************************************** Read Generator Cost Data ***********************************************/
-	// declare temp vectors for Generator Cost Data
-	std::vector<double> a;
-	std::vector<double> b;
-	std::vector<double> c;
-  	// following code is to read Generator Cost data
-	{
-		io::CSVReader<3> in(filename3);
-		in.read_header(io::ignore_extra_column, "Coef1", "Coef2", "Coef3");
-		double coef1; double coef2; double coef3;
-		while(in.read_row(coef1, coef2, coef3)){
-			// get a, b, and c coefficients for cost function
-			a.insert(a.end(), coef1);
-			b.insert(b.end(), coef2);
-			c.insert(c.end(), coef3);
-		}
-	}
-	
-	
-	/*********************************************** Read Branch Data ***********************************************/
-	// declare temp vectors for Branch Data
-	vector<double> VoltAngMax, VoltAngMin, Gvec, Bvec;
-	vector<double> FromBus, ToBus;
-  	// following code is to read Branch Data
-	{
-		io::CSVReader<6> in(filename4);
-		in.read_header(io::ignore_extra_column, "From Bus", "To Bus", "Max Angle Difference", "Min Angle Difference", "G" , "B");
-		int FBus, TBus; 
-		double MaxAng, MinAng, Gij, Bij;
-		while(in.read_row(FBus, TBus, MaxAng, MinAng, Gij, Bij)){
-			// get From Bus, To Bus, and Voltage Angle Max and Min values
-			FromBus.insert(FromBus.end(), FBus);
-			ToBus.insert(ToBus.end(), TBus);
-			VoltAngMax.insert(VoltAngMax.end(), MaxAng);
-			VoltAngMin.insert(VoltAngMin.end(), MinAng);
-			Gvec.push_back(Gij);
-			Bvec.push_back(Bij);
-		}
-	}
-	
-	
-	/*********************************************** Read REG Data ***********************************************/
-	// declare temp vectors for REG Data
-	vector<double> Real_P_REG, React_P_REG;
-	vector<double> BusID_REG;
-	// following code is to read REG Data
-	{
-		io::CSVReader<7> in(filename5);
-		in.read_header(io::ignore_extra_column, "Bus ID", "Real Power Output", "React Power Output", "Max Real Power Output", "Min Real Power Output", "Max React Power Output", "Min React Power Output");
-		
-		double REG_ID, n,o,m,l,	P, Q; 
-		while(in.read_row(REG_ID, n,o,m,l,	P, Q)){
-			// get Bus ID, Real Power, and React Power values
-			BusID_REG.push_back(REG_ID); 
-			Real_P_REG.push_back(P); 
-			React_P_REG.push_back(Q);
-		}	
-	}
-    
+	load_data();
 	
 	/*********************************************** Declare X Vector ***********************************************/
 	//contents {Real Power of Gen n, React Power of Gen n, Volt of Bus m, Volt Angle of Bus m}
@@ -164,8 +49,7 @@ int main(){
 		
 	
 	/*********************************************** Declare/Construct Problem Variables ***********************************************/
-	int Nb = FromBus.size();
-	int sizeY = 2*RealPowerMax.size() + 2*ReactPowerMax.size() + 2*VoltMax.size() + 2*FromBus.size();
+	
 	Real Cost[1], GX[2*Nb], HX[sizeY];
 	ublas::compressed_matrix<double> Z(sizeY, 1);
 	ublas::compressed_matrix<double> L(1, 1);
@@ -202,7 +86,7 @@ int main(){
 	
 	
 	/*********************************************** Declare Derivatives ***********************************************/
-	vector<vector<Real>> dHXdX(sizeY, vector<Real>(sizeX));
+	vector<vector<Real>> dHXdX(sizeY, vector<Real>(sizeX)), dfdX(1, vector<Real>(sizeX));;
 
 
 	/*********************************************** Calculate Derivatives ***********************************************/
@@ -213,8 +97,8 @@ int main(){
 	
 	
 	/*********************************************** Calculate Lagrangian Functions ***********************************************/
-	L = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z) - ublas::prod(trans(gamma), uBLASNaturalLog(Z));
-	
+	// L = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z) - ublas::prod(trans(gamma), uBLASNaturalLog(Z));
+	Lag(X, lambda, mu, gamma, Z, L);
 	for(size_t i = 0; i < L.size1(); ++i) {
         for(size_t j = 0; j < L.size2(); ++j) {
              cout << L(i,j) << ' ';
