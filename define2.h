@@ -8,10 +8,12 @@
 #include <codi.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include<read_data.h>
+#define ucmd ublas::compressed_matrix<double>
 
 using Real = codi::RealForward;
 using namespace std;
 namespace ublas = boost::numeric::ublas;
+
 
 // Bus data
 vector<double> Volt, VoltMax, VoltMin, VoltAng, RealPowerDemand, ReactPowerDemand;
@@ -30,6 +32,7 @@ int Nb, sizeY;
 ublas::compressed_matrix<double> RealVectorToDoubleUBlas(vector<vector<Real>> input, int rowSize, int colSize);
 ublas::compressed_matrix<double> RealPointerToDoubleUBlasVec(Real* input, int rowSize);
 ublas::compressed_matrix<double> uBLASNaturalLog(ublas::compressed_matrix<double> input);
+Real* DoubleUBlasToRealVector(ucmd input, int rowSize, int colSize);
 
 /******************************************** Fuction Declarations ********************************************/
 
@@ -193,8 +196,7 @@ void H(const Real* X, vector<double> RealPowerMax, vector<double> RealPowerMin, 
 }
 
 
-void Lag(const Real* X , ublas::compressed_matrix<double> lambda, ublas::compressed_matrix<double> mu, ublas::compressed_matrix<double> gamma,
-		  ublas::compressed_matrix<double> Z, ublas::compressed_matrix<double> &res)
+/*void Lag(const Real* X , ucmd lambda, ucmd mu, ucmd gamma, ucmd Z, ucmd &res )
 {
 	 Real Cost[1], GX[2*Nb], HX[sizeY];
 
@@ -214,6 +216,99 @@ void Lag(const Real* X , ublas::compressed_matrix<double> lambda, ublas::compres
 	       - ublas::prod(trans(gamma), uBLASNaturalLog(Z));	
 
 }
+
+void Real_Lag(const Real* X , ucmd lambda, ucmd mu, ucmd gamma, ucmd Z, ucmd res, Real* Y)
+{
+	Lag(X, lambda, mu, gamma, Z, res);
+	cout<<res(0,0)<<endl;
+	Y[0].value()= res(0,0);
+
+}
+
+
+
+*/
+
+void Lag(const Real* X , ucmd lambda, ucmd mu, ucmd gamma, ucmd Z, Real* res )
+{
+	 int Nb = lambda.size1(), sizeY = mu.size1();
+
+	 Real Cost[1], GX[2*Nb], HX[sizeY];
+
+	 f(X, a, b, c, Cost);
+	
+	 G_func(X, BusID_Gen, BusID_REG, FromBus, ToBus, RealPowerDemand, ReactPowerDemand, Gvec, Bvec, Real_P_REG, React_P_REG, GX);
+
+	 H(X, RealPowerMax, RealPowerMin, ReactPowerMax, ReactPowerMin, VoltMax, VoltMin, FromBus, ToBus, VoltAngMax, VoltAngMin, HX);
+
+	 size_t j = 0;
+	 int counter = 0;
+	 res[0] = Cost[0];
+	 for(size_t i=0 ; i < lambda.size1();i++)
+	 {
+	 	res[0] += lambda(i,j)*GX[counter];
+	 	counter++;
+	 }
+	 counter = 0;
+	 for(size_t i=0 ; i < mu.size1();i++)
+	 {
+	 	res[0] += mu(i,j)*HX[i];
+	 	res[0] -= gamma(i,j)*Z(i,j);
+	 }
+	 ++counter;
+
+	 // res = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z)
+	 //       - ublas::prod(trans(gamma), uBLASNaturalLog(Z));	
+
+}
+
+
+// vector<vector<Real>> LagX(Real* X, int XSize, ucmd lambda, ucmd mu, ucmd gamma,
+// 						 ucmd Z, ucmd res, vector<vector<Real>> result, int YSize = 1)
+// {
+// 	Real Y[1];
+// 	for(int i = 0; i < XSize; ++i) 
+// 	{
+// 		// Step 1: Set tangent seeding
+// 		X[i].gradient() = 1.0;
+// 		// Step 2: Evaluate function
+// 		Real_Lag( X , lambda, mu, gamma, Z, res, Y);
+// 		for(int j = 0; j < YSize; ++j){
+
+// 			// Step 3: Access gradients
+// 			result[j][i] = Y[j].getGradient();
+// 			cout<<Y[j].value()<<" ";
+
+// 		}
+// 		// Step 4: Reset tangent seeding
+// 		X[i].gradient() = 0.0;
+// 	}	
+// 	return(result);
+// }
+
+vector<vector<Real>> LagX(Real* X, int XSize, ucmd lambda, ucmd mu, ucmd gamma,
+						 ucmd Z, vector<vector<Real>> result, int YSize = 1)
+{
+	Real Y[1];
+	for(int i = 0; i < XSize; ++i) 
+	{
+		// Step 1: Set tangent seeding
+		X[i].gradient() = 1.0;
+		// Step 2: Evaluate function
+		Lag( X , lambda, mu, gamma, Z, Y);
+		for(int j = 0; j < YSize; ++j){
+
+			// Step 3: Access gradients
+			result[j][i] = Y[j].getGradient();
+			cout<<Y[j].value()<<" ";
+
+		}
+		// Step 4: Reset tangent seeding
+		X[i].gradient() = 0.0;
+	}	
+	return(result);
+}
+
 /******************************************** Derivative Declarations ********************************************/
 
 vector<vector<Real>> fX(Real* X, int XSize, Real* Y, int YSize, vector<double> a, vector<double> b, vector<double> c, 
@@ -337,7 +432,18 @@ ublas::compressed_matrix<double> uBLASNaturalLog(ublas::compressed_matrix<double
 }
 
 
+// void DoubleUBlasToRealVector(ucmd input, int rowSize, int colSize, Real* Y) {
 
+// 	Real output[rowSize][colSize];
+
+// 	for(int i = 0; i < rowSize; ++i) {
+// 		for(int j = 0; j < colSize; ++j) {
+// 			input[i][j].value() = output(i,j) ;
+// 		}
+// 	}
+	
+// 	return output;
+// }
 
 
 

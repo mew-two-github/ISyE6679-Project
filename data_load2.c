@@ -52,7 +52,7 @@ int main(){
 	
 	Real Cost[1], GX[2*Nb], HX[sizeY];
 	ublas::compressed_matrix<double> Z(sizeY, 1);
-	ublas::compressed_matrix<double> L(1, 1);
+	// ublas::compressed_matrix<double> L(1, 1);
 	//double L;
 	
 	ublas::compressed_matrix<double> lambda(2*Nb, 1), mu(sizeY, 1), gamma(sizeY, 1);
@@ -86,7 +86,7 @@ int main(){
 	
 	
 	/*********************************************** Declare Derivatives ***********************************************/
-	vector<vector<Real>> dHXdX(sizeY, vector<Real>(sizeX)), dfdX(1, vector<Real>(sizeX));;
+	vector<vector<Real>> dHXdX(sizeY, vector<Real>(sizeX)), dfdX(1, vector<Real>(sizeX));
 
 
 	/*********************************************** Calculate Derivatives ***********************************************/
@@ -98,13 +98,22 @@ int main(){
 	
 	/*********************************************** Calculate Lagrangian Functions ***********************************************/
 	// L = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z) - ublas::prod(trans(gamma), uBLASNaturalLog(Z));
+	Real L[0];
 	Lag(X, lambda, mu, gamma, Z, L);
-	for(size_t i = 0; i < L.size1(); ++i) {
-        for(size_t j = 0; j < L.size2(); ++j) {
-             cout << L(i,j) << ' ';
-		}
-		cout << '\n';
-    }
+	// for(size_t i = 0; i < L.size1(); ++i) {
+  //       for(size_t j = 0; j < L.size2(); ++j) {
+  //            cout << L(i,j) << ' ';
+	// 	}
+	// 	cout << '\n';
+  //   }
+  cout<<L[0].value()<<endl;
+  // vector<vector<Real>> dLdX(1,vector<Real>(sizeX));
+  // dLdX = LagX( X, sizeX, lambda, mu, gamma, Z, L, dLdX );
+  // for(int i = 0;i<sizeX;i++ )
+  // {
+  // 	cout<<dLdX[0][i]<<" ";
+  // }
+  // cout<<endl;
 	
 	
 	// Display Derivatives in uBLAS form
