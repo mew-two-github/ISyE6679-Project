@@ -7,7 +7,7 @@
 #include <map>
 #include <codi.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
-#include<read_data.h>
+#include "read_data.h"
 #define ucmd ublas::compressed_matrix<double>
 
 using Real = codi::RealForward;
@@ -224,9 +224,6 @@ void Real_Lag(const Real* X , ucmd lambda, ucmd mu, ucmd gamma, ucmd Z, ucmd res
 	Y[0].value()= res(0,0);
 
 }
-
-
-
 */
 
 void Lag(const Real* X , ucmd lambda, ucmd mu, ucmd gamma, ucmd Z, Real* res )
@@ -257,34 +254,35 @@ void Lag(const Real* X , ucmd lambda, ucmd mu, ucmd gamma, ucmd Z, Real* res )
 	 }
 	 ++counter;
 
-	 // res = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z)
-	 //       - ublas::prod(trans(gamma), uBLASNaturalLog(Z));	
+	 //res = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z)
+	 //      - ublas::prod(trans(gamma), uBLASNaturalLog(Z));	
 
 }
 
+/*
+vector<vector<Real>> LagX(Real* X, int XSize, ucmd lambda, ucmd mu, ucmd gamma,
+ 						 ucmd Z, ucmd res, vector<vector<Real>> result, int YSize = 1)
+{
+ 	Real Y[1];
+	for(int i = 0; i < XSize; ++i) 
+ 	{
+ 		// Step 1: Set tangent seeding
+ 		X[i].gradient() = 1.0;
+ 		// Step 2: Evaluate function
+ 		Real_Lag( X , lambda, mu, gamma, Z, res, Y);
+ 		for(int j = 0; j < YSize; ++j){
 
-// vector<vector<Real>> LagX(Real* X, int XSize, ucmd lambda, ucmd mu, ucmd gamma,
-// 						 ucmd Z, ucmd res, vector<vector<Real>> result, int YSize = 1)
-// {
-// 	Real Y[1];
-// 	for(int i = 0; i < XSize; ++i) 
-// 	{
-// 		// Step 1: Set tangent seeding
-// 		X[i].gradient() = 1.0;
-// 		// Step 2: Evaluate function
-// 		Real_Lag( X , lambda, mu, gamma, Z, res, Y);
-// 		for(int j = 0; j < YSize; ++j){
+ 			// Step 3: Access gradients
+ 			result[j][i] = Y[j].getGradient();
+ 			cout<<Y[j].value()<<" ";
 
-// 			// Step 3: Access gradients
-// 			result[j][i] = Y[j].getGradient();
-// 			cout<<Y[j].value()<<" ";
+ 		}
+ 		// Step 4: Reset tangent seeding
+ 		X[i].gradient() = 0.0;
+ 	}	
+ 	return(result);
+}
 
-// 		}
-// 		// Step 4: Reset tangent seeding
-// 		X[i].gradient() = 0.0;
-// 	}	
-// 	return(result);
-// }
 
 vector<vector<Real>> LagX(Real* X, int XSize, ucmd lambda, ucmd mu, ucmd gamma,
 						 ucmd Z, vector<vector<Real>> result, int YSize = 1)
@@ -308,6 +306,7 @@ vector<vector<Real>> LagX(Real* X, int XSize, ucmd lambda, ucmd mu, ucmd gamma,
 	}	
 	return(result);
 }
+*/
 
 /******************************************** Derivative Declarations ********************************************/
 
@@ -383,6 +382,31 @@ vector<vector<Real>> GX_func(Real* X, int XSize, Real* Y, int YSize, vector<doub
 	//fflush(stdout);
 	
 	return result;
+}
+
+vector<vector<Real>> forwardModeFirstDerivativeL(Real* X, int XSize, ucmd lambda, ucmd mu, ucmd gamma, ucmd Z, vector<vector<Real>> result, int YSize = 1)
+{
+	Real Y[1];
+	for(int i = 0; i < XSize; ++i) 
+	{
+		// Step 1: Set tangent seeding
+		X[i].gradient() = 1.0;
+		// Step 2: Evaluate function
+		Lag( X , lambda, mu, gamma, Z, Y);
+
+		for(int j = 0; j < YSize; ++j){
+
+			// Step 3: Access gradients
+			result[j][i] = Y[j].getGradient();
+			cout << Y[j].value() << " ";
+
+		}
+		// Step 4: Reset tangent seeding
+		X[i].gradient() = 0.0;
+
+	}	
+
+	return(result);
 }
 
 /******************************************* Useful Funct Declarations *******************************************/
