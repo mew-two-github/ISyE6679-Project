@@ -1,0 +1,5 @@
+Bus ID,Max Real Power Output,Min Real Power Output,Max React Power Output,Min React Power Output,Real Power Output,React Power Output
+6,100,0,25,-8,54,5
+8,550,0,200,-140,413,91
+9,100,0,9,-3,24,-3
+12,410,0,155,-150,326,-102

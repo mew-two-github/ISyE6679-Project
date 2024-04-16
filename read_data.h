@@ -38,7 +38,7 @@ void load_data()
 	char filename2[] = "./data/Case 14 Generator.csv";
 	char filename3[] = "./data/Case 14 Generator Cost.csv";
 	char filename4[] = "./data/Case 14 Branch.csv";
-	char filename5[] = "./data/Case 14 REG.csv";
+	char filename5[] = "./data/Case 14 REG one scen.csv";
   
   
   	/*********************************************** Read Bus Data ***********************************************/

@@ -223,7 +223,7 @@ void SLagWrap(vector<T> const &X , vector<T> &res )
 
 
 
-void second_deriv(vector<double> X /*double* X */, ucmd lambda, ucmd mu, ucmd gamma, ucmd Z)
+ucmd second_deriv(vector<double> X /*double* X */, ucmd lambda, ucmd mu, ucmd gamma, ucmd Z)
 {
 	vector<double> y(1); // double y[1];
 	l = lambda;
@@ -241,19 +241,28 @@ void second_deriv(vector<double> X /*double* X */, ucmd lambda, ucmd mu, ucmd ga
   	auto hes = EH::createHessian(1, xSize);
 	//EH::evalJacobian(codiDotWithNormsWrap<EH::JacobianComputationType>, x, 1, jac);
 	EH::evalHessian(SLagWrap<EH::HessianComputationType>, X, 1, hes);
+	// for(size_t j = 0; j < hes.getN(); j += 1) 
+	// {
+	// std::cout << "  ";
+	// for(size_t k = 0; k < hes.getN(); k += 1) 
+	// {
+	//   if(k != 0) 
+	//   {
+	//     std::cout << ", ";
+	//   }
+	//   std::cout << hes(0, j, k);
+	// }
+	// std::cout << "\n";
+	// }
+	ucmd res(sizeX, sizeX);
 	for(size_t j = 0; j < hes.getN(); j += 1) 
 	{
-	std::cout << "  ";
-	for(size_t k = 0; k < hes.getN(); k += 1) 
-	{
-	  if(k != 0) 
-	  {
-	    std::cout << ", ";
-	  }
-	  std::cout << hes(0, j, k);
-	}
-	std::cout << "\n";
-	}
+		for(size_t k = 0; k < hes.getN(); k += 1) 
+		{
+		  res(j,k) = hes(0,j,k);
+		}
+	}	
+	return res;
 }
 
 

@@ -142,14 +142,15 @@ int main(){
 		{
 			SX[i] = X[i].value();
 		}
-		second_deriv(SX , lambda, mu, gamma, Z);
-			
+		ucmd LXX = second_deriv(SX , lambda, mu, gamma, Z);
+
 			
 		/*********************************************** Compute Matrix for cuSolver ***********************************************/
 		ublas::compressed_matrix<double> muMatrix(sizeY, sizeY), ZMatrixInverse(sizeY, sizeY), M(sizeX, sizeX), N(sizeX,1);
 		muMatrix = uBLASVectorToMatrix(mu);
 		ZMatrixInverse = uBLASVectorToMatrix(Z);
 		ZMatrixInverse = InvertDiagonalMatrix(ZMatrixInverse);
+
 		
 		// Computing N with temp variables
 		ublas::compressed_matrix<double> temp1(sizeX, sizeY), temp2(sizeY,1);
@@ -160,15 +161,23 @@ int main(){
 		// Computing M with temp variables
 		ublas::compressed_matrix<double> temp3(sizeY, sizeY);
 		temp3 = ublas::prod(temp1, muMatrix);
-		M = ublas::prod(temp3, dHdxMatrix);
-		
+		M = LXX + ublas::prod(temp3, dHdxMatrix);
 		
 		/*********************************************** Assign Values for cuSolver ***********************************************/
 		//Create cuSolver matrix and vector on host
 		int n = (M.size1()+dGXdXMatrix.size1())*(M.size2()+dGXdXMatrix.size1()), k = (N.size1()+GXuBLAS.size1());
 		double h_cuSolverMatrix[n], h_cuSolverVector[k]; //column-major storage
 		
-		
+		CreateCuSolverMatrix(M, dGXdXMatrix, h_cuSolverMatrix);
+		CreateCuSolverVector(N, GXuBLAS, h_cuSolverVector);
+		cout<<endl<<"double* h_cuSolverMatrix =";
+		for(int i=0; i<n;++i)
+			cout<<h_cuSolverMatrix[i]<<",";
+		cout<<endl;
+		cout<<"double* h_cuSolverVector =";
+		for(int i=0; i<k;++i)
+			cout<<h_cuSolverVector[i]<<",";
+		cout<<endl;
 		//Create cuSolver matrix and vector on device
 		//double d_cuSolverMatrix[(M.size1()+dGXdXMatrix.size1())*(M.size1()+dGXdXMatrix.size1())] //column-major storage
 		
