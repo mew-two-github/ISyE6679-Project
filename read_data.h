@@ -1,8 +1,10 @@
 #ifndef READ_DATA_H_
 #define READ_DATA_H_
 
-#include <bits/stdc++.h>
+#include <iostream> 
+#include <vector>
 #include "csv.h"
+#define ucmd ublas::compressed_matrix<double>
 
 using namespace std;
 
@@ -23,7 +25,10 @@ extern vector<double>  a, b, c;
 extern vector<double> VoltAngMax, VoltAngMin, Gvec, Bvec, FromBus, ToBus;
 // declare temp vectors for REG Data
 extern vector<double> Real_P_REG, React_P_REG,	BusID_REG;
-extern int Nb, sizeY;
+extern int Nb, sizeY, sizeX;
+
+namespace ublas = boost::numeric::ublas;
+
 
 
 void load_data()

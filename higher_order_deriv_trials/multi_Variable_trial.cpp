@@ -6,6 +6,7 @@ using namespace std;
 using t1s = codi::RealForwardGen<double>;
 using t2s = codi::RealForwardGen<t1s>;
 // Function supports any data type T with which * is defined
+template<typename T>
 t2s* func(const t2s*  x) {
   t2s t[] = { x[0] * x[0] * x[0], x[0]*x[1]*30, 5*x[1]*x[1] };
   return t ;

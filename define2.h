@@ -398,7 +398,7 @@ vector<vector<Real>> forwardModeFirstDerivativeL(Real* X, int XSize, ucmd lambda
 
 			// Step 3: Access gradients
 			result[j][i] = Y[j].getGradient();
-			cout << Y[j].value() << " ";
+			// cout << Y[j].value() << " ";
 
 		}
 		// Step 4: Reset tangent seeding
