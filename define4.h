@@ -526,9 +526,51 @@ void RealPointerAdd(Real* input1, Real* input2, int size) {
 	}
 }
 
+void CreateCuSolverMatrix(ublas::compressed_matrix<double> M, ublas::compressed_matrix<double> dGXdXMatrix, double* cuSolverMatrix) {
+	int iterator = 0;
 
+	for(int i = 0; i < (M.size2() + dGXdXMatrix.size1()); ++i) { // goes through column by column
+		for(int j = 0; j < (M.size1() + dGXdXMatrix.size1()); ++j) { // goes through row by row
+		
+			if(i < M.size2()) {
+				if(j < M.size1()) {
+					cuSolverMatrix[iterator] = M(j,i); // upper left hand matrix
+				}
+				if(j >= M.size1()) {
+					cuSolverMatrix[iterator] = dGXdXMatrix((j-M.size1()),i); // lower left hand matrix
+				}
+			}
+			
+			if(i >= M.size2()) {
+				if(j < M.size1()) {
+					cuSolverMatrix[iterator] = dGXdXMatrix((i-M.size2()),j); // upper right hand matrix NOTE: transposes the input
+				}
+				if(j >= M.size1()) {
+					cuSolverMatrix[iterator] = 0; // lower right hand matrix
+				}
+			}
+			
+			iterator++;
+		}
+		//std::cout << std::endl;
+	}
+}
 
+void CreateCuSolverVector(ublas::compressed_matrix<double> N, ublas::compressed_matrix<double> GXuBLAS, double* cuSolverMatrix) {
+	//N(sizeX,1) uBlas Vec
+	//GXuBLAS(2*Nb, 1) uBlas Vec
 
+	for(int i = 0; i < (N.size1() + GXuBLAS.size1()); ++i) {
+		if(i < N.size1()){
+			//std::cout << N(i,0) << ' ';
+			cuSolverMatrix[i] = N(i,0);
+		}
+		else{
+			cuSolverMatrix[i] = GXuBLAS(i-N.size1(),0);
+		}
+		//std::cout << std::endl;
+	}
+}
 
 
 
