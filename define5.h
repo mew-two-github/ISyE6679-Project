@@ -25,7 +25,7 @@ vector<double>  a, b, c;
 vector<double> VoltAngMax, VoltAngMin, Gvec, Bvec, FromBus, ToBus;
 // declare temp vectors for REG Data
 vector<double> Real_P_REG, React_P_REG,	BusID_REG;
-int Nb, sizeY;
+int Nb, sizeY, sizeX;
 
 
 /*****Function headers*****/

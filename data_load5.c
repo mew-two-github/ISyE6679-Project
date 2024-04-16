@@ -36,7 +36,7 @@ int main(){
 	
 	/*********************************************** Declare X Vector ***********************************************/
 	//contents {Real Power of Gen n, React Power of Gen n, Volt of Bus m, Volt Angle of Bus m}
-	int sizeX = RealPower.size() + ReactPower.size() + Volt.size() + VoltAng.size();
+	sizeX = RealPower.size() + ReactPower.size() + Volt.size() + VoltAng.size();
 	Real X[sizeX];
 	int counter = 0;
 	for (double i: RealPower)
@@ -166,7 +166,7 @@ int main(){
 		/*********************************************** Assign Values for cuSolver ***********************************************/
 		//Create cuSolver matrix and vector on host
 		int n = (M.size1()+dGXdXMatrix.size1())*(M.size2()+dGXdXMatrix.size1()), k = (N.size1()+GXuBLAS.size1());
-		double h_cuSolverMatrix[n], h_cuSolverVector[k] //column-major storage
+		double h_cuSolverMatrix[n], h_cuSolverVector[k]; //column-major storage
 		
 		
 		//Create cuSolver matrix and vector on device
@@ -226,9 +226,9 @@ int main(){
 		
 		
 		/*********************************************** Compute Convergent Criteria ***********************************************/
-		double epsilon = 0.000001, temp5 = 0, temp6 = 0, temp7 = 0;
+		double epsilon = 0.000001, temp6 = 0, temp7 = 0, temp5 = 0;
 		f(X, a, b, c, Cost);
-		ublas::compressed_matrix<double> CostuBLASNew(1, 1), temp5(1, 1);
+		ublas::compressed_matrix<double> CostuBLASNew(1, 1);
 		CostuBLASNew = RealPointerToDoubleUBlasVec(Cost, 1);
 		
 		temp6 = sqrt(ublas::prod(trans((CostuBLASNew - CostuBLAS)), (CostuBLASNew - CostuBLAS))(0,0));
