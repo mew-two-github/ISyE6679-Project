@@ -39,5 +39,7 @@ int main()
     }
     std::cout << "\n";
   }
+  double val = hes(0, 1, 0);
+  cout<<val<<endl;
   return 0;
 }

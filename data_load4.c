@@ -3,6 +3,7 @@
 #include <iostream> 
 #include <vector>
 #include "read_data.h"
+#include "second_derivs.h"
 #include <codi.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 
@@ -35,7 +36,7 @@ int main(){
 	
 	/*********************************************** Declare X Vector ***********************************************/
 	//contents {Real Power of Gen n, React Power of Gen n, Volt of Bus m, Volt Angle of Bus m}
-	int sizeX = RealPower.size() + ReactPower.size() + Volt.size() + VoltAng.size();
+	sizeX = RealPower.size() + ReactPower.size() + Volt.size() + VoltAng.size();
 	Real X[sizeX];
 	int counter = 0;
 	for (double i: RealPower)
@@ -128,7 +129,7 @@ int main(){
 	// L = CostuBLAS + ublas::prod(trans(lambda), GXuBLAS) + ublas::prod(trans(mu), HXuBLAS + Z) - ublas::prod(trans(gamma), uBLASNaturalLog(Z));
 	Lag(X, lambda, mu, gamma, Z, L);
 	
-	//cout << L[0].value() << endl;
+	// cout << L[0].value() << endl;
 	
 	dLdX = forwardModeFirstDerivativeL(X, sizeX, lambda, mu, gamma, Z, dLdX);
 	ublas::compressed_matrix<double> dLdXMatrix(dLdX.size(), dLdX[0].size());
@@ -142,6 +143,13 @@ int main(){
 		cout << '\n';
     }
     cout << scientific;*/
+	vector<double> SX(sizeX);
+	//double SX[sizeX];
+	for(int i = 0;i<sizeX;++i)
+	{
+		SX[i] = X[i].value();
+	}
+	second_deriv(SX , lambda, mu, gamma, Z);
     	
     	
 	/*********************************************** Compute Matrix for cuSolver ***********************************************/
