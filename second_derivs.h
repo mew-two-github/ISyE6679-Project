@@ -220,8 +220,8 @@ void SLagWrap(vector<T> const &X , vector<T> &res )
 {
 	SLag( &X[0], l, m, g, Zee, &res[0] );
 }
-using EH = codi::EvaluationHelper;
-auto hes = EH::createHessian(1, sizeX);
+
+
 
 void second_deriv(vector<double> X /*double* X */, ucmd lambda, ucmd mu, ucmd gamma, ucmd Z)
 {
@@ -235,20 +235,25 @@ void second_deriv(vector<double> X /*double* X */, ucmd lambda, ucmd mu, ucmd ga
 	// SLag( &X[0], lambda, mu, gamma, Z, &y[0] );
 	cout<<"second_derv"<<y[0];
 	cout<<endl;
+	size_t xSize = sizeX;
+	using EH = codi::EvaluationHelper;
+	auto jac = EH::createJacobian(1, xSize);
+  	auto hes = EH::createHessian(1, xSize);
+	//EH::evalJacobian(codiDotWithNormsWrap<EH::JacobianComputationType>, x, 1, jac);
 	EH::evalHessian(SLagWrap<EH::HessianComputationType>, X, 1, hes);
-	// for(size_t j = 0; j < hes.getN(); j += 1) 
-	// {
-	// std::cout << "  ";
-	// for(size_t k = 0; k < hes.getN(); k += 1) 
-	// {
-	//   if(k != 0) 
-	//   {
-	//     std::cout << ", ";
-	//   }
-	//   std::cout << hes(0, j, k);
-	// }
-	// std::cout << "\n";
-	// }
+	for(size_t j = 0; j < hes.getN(); j += 1) 
+	{
+	std::cout << "  ";
+	for(size_t k = 0; k < hes.getN(); k += 1) 
+	{
+	  if(k != 0) 
+	  {
+	    std::cout << ", ";
+	  }
+	  std::cout << hes(0, j, k);
+	}
+	std::cout << "\n";
+	}
 }
 
 
