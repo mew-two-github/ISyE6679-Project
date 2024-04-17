@@ -184,7 +184,7 @@ int main(){
 		double res[k];
 		solve( h_cuSolverMatrix, h_cuSolverVector, k, res );
 		ublas::compressed_matrix<double> deltalambda(2*Nb, 1), deltaX(sizeX, 1); // will be solved for on GPU
-		CudaVectorToDoubleUBlasVec( res, sizeX, deltaX, 2*Nb, deltalambda )
+		CudaVectorToDoubleUBlasVec( res, sizeX, deltaX, 2*Nb, deltalambda );
 		/************************************
 		CUSOLVER WILL GO HERE
 		*************************************/
@@ -251,7 +251,7 @@ int main(){
 			break;
 		}
 		iterations++;
-		cout<<"Iteration-"<<iterations<<": Old cost"<<CostuBLASOld(0,0)<<": New cost"<<CostuBLASNew(0,0);
+		cout<<"Iteration-"<<iterations<<": Old cost"<<CostuBLAS(0,0)<<": New cost"<<CostuBLASNew(0,0);
 	}
 }
 
