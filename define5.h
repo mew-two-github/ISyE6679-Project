@@ -573,7 +573,33 @@ void CreateCuSolverVector(ublas::compressed_matrix<double> N, ublas::compressed_
 }
 
 
+void CudaVectorToDoubleUBlasVec(double* inputVector, int Vector1Size, ublas::compressed_matrix<double> out1, int Vector2Size,
 
+		ublas::compressed_matrix<double> out2) {
+
+	
+
+	for(int i = 0; i < Vector1Size + Vector2Size; ++i) {
+
+		if (i < Vector1Size) {
+
+			out1(i, 0) = inputVector[i];
+
+			//std::cout << out1(i, 0) << ' ';
+
+		}
+
+		else {
+
+			out2(i-Vector1Size, 0) = inputVector[i];
+
+			//std::cout << out2(i-Vector1Size, 0) << ' ';
+
+		}
+
+	}
+
+}
 
 
 #endif

@@ -9,7 +9,7 @@
 
 using Real = codi::RealForward;
 namespace ublas = boost::numeric::ublas;
-
+extern "C" void solve(double* matrix,  double* b_arr, int m, double* res );
 void readREG(char filename[]){
   io::CSVReader<7> in(filename);
   in.read_header(io::ignore_extra_column, "Bus ID", "Real Power Output", "React Power Output", "Max Real Power Output", "Min Real Power Output", "Max React Power Output", "Min React Power Output");
@@ -48,7 +48,8 @@ int main(){
 	for (double i: VoltAng)
 		X[counter++] = i;
 		
-	
+	// for(int i=0;i<sizeX;++i)
+	// 	cout<<X[i]<<" ";
 	/*********************************************** Declare/Construct Problem Variables ***********************************************/
 	int Nb = FromBus.size();
 	int sizeY = 2*RealPowerMax.size() + 2*ReactPowerMax.size() + 2*VoltMax.size() + 2*FromBus.size();
@@ -170,18 +171,20 @@ int main(){
 		
 		CreateCuSolverMatrix(M, dGXdXMatrix, h_cuSolverMatrix);
 		CreateCuSolverVector(N, GXuBLAS, h_cuSolverVector);
-		cout<<endl<<"double* h_cuSolverMatrix =";
-		for(int i=0; i<n;++i)
-			cout<<h_cuSolverMatrix[i]<<",";
-		cout<<endl;
-		cout<<"double* h_cuSolverVector =";
-		for(int i=0; i<k;++i)
-			cout<<h_cuSolverVector[i]<<",";
-		cout<<endl;
+		// cout<<endl<<"double* h_cuSolverMatrix =";
+		// for(int i=0; i<n;++i)
+		// 	cout<<h_cuSolverMatrix[i]<<",";
+		// cout<<endl;
+		// cout<<"double* h_cuSolverVector =";
+		// for(int i=0; i<k;++i)
+		// 	cout<<h_cuSolverVector[i]<<",";
+		// cout<<endl;
 		//Create cuSolver matrix and vector on device
 		//double d_cuSolverMatrix[(M.size1()+dGXdXMatrix.size1())*(M.size1()+dGXdXMatrix.size1())] //column-major storage
-		
-		
+		double res[k];
+		solve( h_cuSolverMatrix, h_cuSolverVector, k, res );
+		ublas::compressed_matrix<double> deltalambda(2*Nb, 1), deltaX(sizeX, 1); // will be solved for on GPU
+		CudaVectorToDoubleUBlasVec( res, sizeX, deltaX, 2*Nb, deltalambda )
 		/************************************
 		CUSOLVER WILL GO HERE
 		*************************************/
@@ -189,7 +192,7 @@ int main(){
 		/*********************************************** Compute Update Values ***********************************************/
 		// We assume deltaX and deltalambda are given from the cuSolver output
 		double chi = 0.99995, sigma = 0.1, alphaP, alphaD;
-		ublas::compressed_matrix<double> deltalambda(2*Nb, 1), deltaX(sizeX, 1); // will be solved for on GPU
+		
 		// loop through solution of cuSolver to fill deltalambda and deltaX
 		ublas::compressed_matrix<double> deltaZ(sizeY, 1), deltamu(sizeY, 1), newGamma(1,1);
 		
@@ -248,6 +251,7 @@ int main(){
 			break;
 		}
 		iterations++;
+		cout<<"Iteration-"<<iterations<<": Old cost"<<CostuBLASOld(0,0)<<": New cost"<<CostuBLASNew(0,0);
 	}
 }
 
