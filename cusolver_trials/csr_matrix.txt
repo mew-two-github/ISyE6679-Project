@@ -1,0 +1,4 @@
+nnz= 0
+const std::vector<int> csrRowPtrA = {0};
+const std::vector<int> csrColIndA = {};
+const std::vector<double> csrValA = {};

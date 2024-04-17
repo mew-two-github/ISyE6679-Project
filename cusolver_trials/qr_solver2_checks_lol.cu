@@ -1,100 +1,106 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <iomanip>
 #include <cuda_runtime.h>
 #include <cusolverDn.h>
 #include <cublas_v2.h>
 
-// Error checking for CUDA calls
-#define CHECK_CUDA(call) {\
-    const cudaError_t error = call;\
-    if (error != cudaSuccess) {\
-        printf("Error: %s:%d, ", __FILE__, __LINE__);\
-        printf("code:%d, reason: %s\n", error, cudaGetErrorString(error));\
-        exit(1);\
-    }\
+#define BLOCK_SIZE 32
+
+// Error checking macro for CUDA calls
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true) {
+   if (code != cudaSuccess) {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
 }
 
-// Error checking for cuSolver calls
-#define CHECK_CUSOLVER(call, handle) {\
-    const cusolverStatus_t error = call;\
-    if (error != CUSOLVER_STATUS_SUCCESS) {\
-        if (handle) cusolverDnDestroy(handle);\
-        printf("Error: %s:%d, ", __FILE__, __LINE__);\
-        printf("CUSOLVER error code:%d\n", error);\
-        exit(1);\
-    }\
+// Error handling for cuSolver calls
+inline void cusolveSafeCall(cusolverStatus_t status) {
+    if(status != CUSOLVER_STATUS_SUCCESS) {
+        std::cerr << "cuSolver API failed with status " << status << std::endl;
+        exit(1);
+    }
 }
 
-// Error checking for cuBLAS calls
-#define CHECK_CUBLAS(call, handle) {\
-    const cublasStatus_t error = call;\
-    if (error != CUBLAS_STATUS_SUCCESS) {\
-        if (handle) cublasDestroy(handle);\
-        printf("Error: %s:%d, ", __FILE__, __LINE__);\
-        printf("CUBLAS error code:%d\n", error);\
-        exit(1);\
-    }\
+// Error handling for cuBLAS calls
+inline void cublasSafeCall(cublasStatus_t status) {
+    if(status != CUBLAS_STATUS_SUCCESS) {
+        std::cerr << "cuBLAS API failed with status " << status << std::endl;
+        exit(1);
+    }
+}
+
+__global__ void printMatrix(const double *A, int numRows, int numCols) {
+    int row = threadIdx.x + blockIdx.x * blockDim.x;
+    int col = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if(row < numRows && col < numCols) {
+        printf("A[%d, %d] = %f\n", row, col, A[row + col * numRows]);
+    }
 }
 
 void solver( double* A, double* b, double* x, int m, int n){
-    cusolverDnHandle_t cusolverH = NULL;
-    cublasHandle_t cublasH = NULL;
-    
-    // double A[m*n] = {1, 2, 3, 4, 5, 6, 7, 8, 10}; 
-    // double b[m] = {1, 2, 3}; 
-    double *d_A = NULL, *d_tau = NULL, *d_b = NULL;
-    int *devInfo = NULL;
-    double *d_work = NULL;
-    int lwork = 0;
-    int info_gpu = 0;
-    double alpha = 1.0;
+   // cuSOLVER and CUBLAS initialization
+    cusolverDnHandle_t solver_handle;
+    cublasHandle_t cublas_handle;
+    cusolveSafeCall(cusolverDnCreate(&solver_handle));
+    cublasSafeCall(cublasCreate(&cublas_handle));
 
-    
-    CHECK_CUDA(cudaSetDevice(0)); 
-    CHECK_CUSOLVER(cusolverDnCreate(&cusolverH), cusolverH);
-    CHECK_CUBLAS(cublasCreate(&cublasH), cublasH);
+    double *d_A, *d_TAU, *d_b, *work;
+    int *devInfo, work_size = 0;
 
-    // Allocate memory 
-    CHECK_CUDA(cudaMalloc((void**)&d_A, sizeof(double) * m * n));
-    CHECK_CUDA(cudaMalloc((void**)&d_tau, sizeof(double) * n));
-    CHECK_CUDA(cudaMalloc((void**)&d_b, sizeof(double) * m));
-    CHECK_CUDA(cudaMalloc((void**)&devInfo, sizeof(int)));
+    gpuErrchk(cudaMalloc((void**)&d_A, m * n * sizeof(double)));
+    gpuErrchk(cudaMalloc((void**)&d_b, m * sizeof(double)));
+    gpuErrchk(cudaMalloc((void**)&d_TAU, n * sizeof(double)));
+    gpuErrchk(cudaMalloc((void**)&devInfo, sizeof(int)));
 
-    // Copy host memory
-    CHECK_CUDA(cudaMemcpy(d_A, A, sizeof(double) * m * n, cudaMemcpyHostToDevice));
-    CHECK_CUDA(cudaMemcpy(d_b, b, sizeof(double) * m, cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(d_A, A, m * n * sizeof(double), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(d_b, b, m * sizeof(double), cudaMemcpyHostToDevice));
 
-    //space of geqrf
-    CHECK_CUSOLVER(cusolverDnDgeqrf_bufferSize(cusolverH, m, n, d_A, m, &lwork), cusolverH);
-    CHECK_CUDA(cudaMalloc((void**)&d_work, sizeof(double) * lwork));
+    cusolveSafeCall(cusolverDnDgeqrf_bufferSize(solver_handle, m, n, d_A, m, &work_size));
+    gpuErrchk(cudaMalloc((void**)&work, work_size * sizeof(double)));
 
-    // QR factorization
-    CHECK_CUSOLVER(cusolverDnDgeqrf(cusolverH, m, n, d_A, m, d_tau, d_work, lwork, devInfo), cusolverH);
-    CHECK_CUDA(cudaMemcpy(&info_gpu, devInfo, sizeof(int), cudaMemcpyDeviceToHost));
+    // QR decomposition 
+    cusolveSafeCall(cusolverDnDgeqrf(solver_handle, m, n, d_A, m, d_TAU, work, work_size, devInfo));
 
-    if (info_gpu != 0) {
-        printf("QR factorization failed, info: %d\n", info_gpu);
+    // Extracting the R matrix and compute Q^T*b
+    double *d_R;
+    gpuErrchk(cudaMalloc(&d_R, n * n * sizeof(double))); // R is NxN (upper triangular)
+    dim3 Grid(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 Block((n + BLOCK_SIZE - 1) / BLOCK_SIZE, (n + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    printMatrix<<<Block, Grid>>>(d_A, m, n);
+    gpuErrchk(cudaPeekAtLastError());
+    gpuErrchk(cudaDeviceSynchronize());
+
+    // Computing Q^T*b (storing the result in d_b)
+    cusolveSafeCall(cusolverDnDormqr(solver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m, 1, n, d_A, m, d_TAU, d_b, m, work, work_size, devInfo));
+
+    // Solving R*x = Q^T*b for x
+    const double alpha = 1.0;
+    cublasSafeCall(cublasDtrsm(cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, 1, &alpha, d_A, m, d_b, m));
+
+    // Copying the d_b solution into h_x for printing
+    double h_x[n];
+    gpuErrchk(cudaMemcpy(h_x, d_b, n * sizeof(double), cudaMemcpyDeviceToHost));
+
+    // Printing to terminal x[i] solution
+    std::cout << "Solution x: \n";
+    for(int i = 0; i < n; i++) {
+        std::cout << "x[" << i << "] = " << h_x[i] << std::endl;
     }
 
-    // apply Q^T to b
-    CHECK_CUSOLVER(cusolverDnDormqr(cusolverH, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m, 1, n, d_A, m, d_tau, d_b, m, d_work, lwork, devInfo), cusolverH);
-    CHECK_CUDA(cudaMemcpy(&info_gpu, devInfo, sizeof(int), cudaMemcpyDeviceToHost));
+    // DESTROY DEMOLISH DEVOUR 
+    cudaFree(d_A);
+    cudaFree(d_TAU);
+    cudaFree(d_b);
+    cudaFree(work);
+    cudaFree(devInfo);
+    cudaFree(d_R);
 
-    if (info_gpu != 0) {
-        printf("Application of Q^T to b failed, info: %d\n", info_gpu);
-    }
-
-    // solve R*x = Q^T*b
-    CHECK_CUBLAS(cublasDtrsm(cublasH, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, 1, &alpha, d_A, m, d_b, n), cublasH);
-
-    // Copy result back 
-    CHECK_CUDA(cudaMemcpy(b, d_b, sizeof(double) * n, cudaMemcpyDeviceToHost));
-
-    
-    printf("Solution:\n");
-    for (int i = 0; i < n; i++) {
-        printf("%f\n", b[i]);
-    }
+    cusolverDnDestroy(solver_handle);
+    cublasDestroy(cublas_handle);
 
     // Cleanup
     cudaFree(d_A);
