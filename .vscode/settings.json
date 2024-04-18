@@ -1,0 +1,16 @@
+{
+    "C_Cpp.default.compilerPath": "C:\\MinGW\\bin\\g++.exe",
+    "files.associations": {
+        "functional": "c",
+        "deque": "c",
+        "string": "c",
+        "vector": "c",
+        "array": "c",
+        "bitset": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "load_data_2.C": "cpp",
+        "random": "c"
+    }
+}

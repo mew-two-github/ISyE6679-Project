@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:\\Users\\HP\\Documents\\Acad stuff\\GaTech\\courses\\Spring-2024\\ISyE6679\\Project\\code\\CoDiPack\\include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "windows-gcc-x86",
+            "compilerArgs": [
+                "-I \"../../CoDiPack/include\"",
+                "-I \"../fast-csv-cpp-parser\""
+            ]
+        }
+    ],
+    "version": 4
+}

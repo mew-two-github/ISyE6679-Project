@@ -1,0 +1,7 @@
+module load cuda
+nvcc -o qr_solver CrazySparse.cu -lcusolver -lcusparse -std=c++11
+sbatch cuda.sbatch
+
+-----------------
+nvcc -o cusolver.o -c cusolver_stuff.cu -lcusolver -lcusparse -std=c++11
+-c : compiles to an object 
